@@ -30,7 +30,6 @@ import MarkdownPreview from './previews/MarkdownPreview'
 import CodePreview from './previews/CodePreview'
 import OfficePreview from './previews/OfficePreview'
 import AudioPreview from './previews/AudioPreview'
-import VideoPreview from './previews/VideoPreview'
 import PDFPreview from './previews/PDFPreview'
 import URLPreview from './previews/URLPreview'
 import ImagePreview from './previews/ImagePreview'
@@ -42,6 +41,11 @@ import FolderGridLayout from './FolderGridLayout'
 
 // Disabling SSR for some previews
 const EPUBPreview = dynamic(() => import('./previews/EPUBPreview'), {
+  ssr: false,
+})
+
+// Disabling SSR for VideoPreview to avoid plyr issues
+const VideoPreview = dynamic(() => import('./previews/VideoPreview'), {
   ssr: false,
 })
 
@@ -61,7 +65,7 @@ const queryToPath = (query?: ParsedUrlQuery) => {
   return '/'
 }
 
-// Render the icon of a folder child (may be a file or a folder), use emoji if the name of the child contains emoji
+// Render icon of a folder child (may be a file or a folder), use emoji if the name of the child contains emoji
 const renderEmoji = (name: string) => {
   const emoji = emojiRegex().exec(name)
   return { render: emoji && !emoji.index, emoji }
@@ -165,7 +169,7 @@ const FileListing: FC<{ query?: ParsedUrlQuery }> = ({ query }) => {
   const { data, error, size, setSize } = useProtectedSWRInfinite(path)
 
   if (error) {
-    // If error includes 403 which means the user has not completed initial setup, redirect to OAuth page
+    // If error includes 403 which means user has not completed initial setup, redirect to OAuth page
     if (error.status === 403) {
       router.push('/onedrive-vercel-index-oauth/step-1')
       return <div />
@@ -439,4 +443,5 @@ const FileListing: FC<{ query?: ParsedUrlQuery }> = ({ query }) => {
     </PreviewContainer>
   )
 }
+
 export default FileListing
