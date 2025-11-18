@@ -6,7 +6,6 @@ import { useTranslation } from 'next-i18next'
 
 import axios from 'axios'
 import toast from 'react-hot-toast'
-import dynamic from 'next/dynamic'
 import { useAsync } from 'react-async-hook'
 import { useClipboard } from 'use-clipboard-copy'
 
@@ -20,15 +19,7 @@ import FourOhFour from '../FourOhFour'
 import Loading from '../Loading'
 import CustomEmbedLinkMenu from '../CustomEmbedLinkMenu'
 
-// Dynamically import Plyr to avoid SSR issues
-const Plyr = dynamic(() => import('plyr-react'), {
-  ssr: false,
-  loading: () => <div>Loading video player...</div>
-})
-
-// Dynamically import CSS
-import('plyr-react/plyr.css')
-
+// Create a separate component that only loads plyr on client side
 const VideoPlayer: FC<{
   videoName: string
   videoUrl: string
@@ -39,7 +30,28 @@ const VideoPlayer: FC<{
   isFlv: boolean
   mpegts: any
 }> = ({ videoName, videoUrl, width, height, thumbnail, subtitle, isFlv, mpegts }) => {
+  const [Plyr, setPlyr] = useState<any>(null)
+  const [isClient, setIsClient] = useState(false)
+
   useEffect(() => {
+    setIsClient(true)
+    
+    // Only load plyr on client side
+    if (typeof window !== 'undefined') {
+      const loadPlyr = async () => {
+        const [plyrModule] = await Promise.all([
+          import('plyr-react'),
+          import('plyr-react/plyr.css')
+        ])
+        setPlyr(() => plyrModule.default)
+      }
+      loadPlyr()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isClient || !Plyr) return
+
     // Really really hacky way to inject subtitles as file blobs into video element
     axios
       .get(subtitle, { responseType: 'blob' })
@@ -61,7 +73,11 @@ const VideoPlayer: FC<{
       }
       loadFlv()
     }
-  }, [videoUrl, isFlv, mpegts, subtitle])
+  }, [videoUrl, isFlv, mpegts, subtitle, isClient, Plyr])
+
+  if (!isClient || !Plyr) {
+    return <div className="flex items-center justify-center h-64">Loading video player...</div>
+  }
 
   // Common plyr configs, including video source and plyr options
   const plyrSource = {
@@ -96,7 +112,7 @@ const VideoPreview: FC<{ file: OdFileObject }> = ({ file }) => {
   const vtt = `${asPath.substring(0, asPath.lastIndexOf('.'))}.vtt`
   const subtitle = `/api/raw/?path=${vtt}${hashedToken ? `&odpt=${hashedToken}` : ''}`
 
-  // We also format the raw video file for in-browser player as well as all other players
+  // We also format raw video file for in-browser player as well as all other players
   const videoUrl = `/api/raw/?path=${asPath}${hashedToken ? `&odpt=${hashedToken}` : ''}`
 
   const isFlv = getExtension(file.name) === 'flv'
