@@ -8,6 +8,13 @@ module.exports = {
     // Completely disable plyr on server side
     if (isServer) {
       config.externals = [...(config.externals || []), 'plyr', 'plyr-react']
+      
+      // Also ignore plyr modules during server-side compilation
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'plyr': false,
+        'plyr-react': false,
+      }
     }
     
     if (!isServer) {
