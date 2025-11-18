@@ -39,11 +39,16 @@ const VideoPlayer: FC<{
     // Only load plyr on client side
     if (typeof window !== 'undefined') {
       const loadPlyr = async () => {
-        const [plyrModule] = await Promise.all([
-          import('plyr-react'),
-          import('plyr-react/plyr.css')
-        ])
-        setPlyr(() => plyrModule.default)
+        try {
+          const plyrModule = await import('plyr-react')
+          
+          // Load CSS separately to avoid TypeScript module resolution issues
+          await import('plyr-react/plyr.css')
+          
+          setPlyr(() => plyrModule.default)
+        } catch (error) {
+          console.error('Failed to load plyr:', error)
+        }
       }
       loadPlyr()
     }
@@ -112,7 +117,7 @@ const VideoPreview: FC<{ file: OdFileObject }> = ({ file }) => {
   const vtt = `${asPath.substring(0, asPath.lastIndexOf('.'))}.vtt`
   const subtitle = `/api/raw/?path=${vtt}${hashedToken ? `&odpt=${hashedToken}` : ''}`
 
-  // We also format raw video file for in-browser player as well as all other players
+  // We also format the raw video file for in-browser player as well as all other players
   const videoUrl = `/api/raw/?path=${asPath}${hashedToken ? `&odpt=${hashedToken}` : ''}`
 
   const isFlv = getExtension(file.name) === 'flv'
