@@ -11,6 +11,12 @@ module.exports = {
         fs: false,
       }
     }
+    
+    // Completely exclude plyr from server-side bundle
+    if (isServer) {
+      config.externals = [...(config.externals || []), 'plyr']
+    }
+    
     return config
   },
   transpilePackages: ['plyr-react']
