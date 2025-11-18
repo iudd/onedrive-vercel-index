@@ -5,6 +5,12 @@ module.exports = {
   reactStrictMode: true,
   trailingSlash: true,
   webpack: (config, { isServer }) => {
+    // Fix for plyr SSR issue
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      'plyr': false,
+    }
+    
     if (!isServer) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -12,12 +18,6 @@ module.exports = {
       }
     }
     
-    // Completely exclude plyr from server-side bundle
-    if (isServer) {
-      config.externals = [...(config.externals || []), 'plyr']
-    }
-    
     return config
-  },
-  transpilePackages: ['plyr-react']
+  }
 }
